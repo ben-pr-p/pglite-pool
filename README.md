@@ -1,7 +1,7 @@
 # pglite-pool
 
-Simplifies using `[pglite](https://github.com/electric-sql/pglite)` in Node/Bun for
-codegen and tests by using `[pglite-server](https://www.npmjs.com/package/pglite-server)`
+Simplifies using [`pglite`](https://github.com/electric-sql/pglite) in Node/Bun for
+codegen and tests by using [`pglite-server`](https://www.npmjs.com/package/pglite-server)
 to create a Postgres server at a random port.
 
 ## Usage
@@ -13,20 +13,20 @@ Both a teardown style and a callback style are supported.
 import { getPostgres } from 'pglite-pool';
 
 async function main() {
-	const pg = await getPostgres()
+  const pg = await getPostgres()
 
-	// pg.pool is an already connected Postgres pool
-	const pool = pg.pool
+  // pg.pool is an already connected Postgres pool
+  const pool = pg.pool
 
-	// Do pool things...
-	await pool.query('select 1')
+  // Do pool things...
+  await pool.query('select 1')
 
-	const client = await pool.connect()
-	await client.query('select 1')
-	client.release()
+  const client = await pool.connect()
+  await client.query('select 1')
+  client.release()
 
-	// Teardowns the pool, server, and in-memory Postgres instance
-	await pg.teardown()
+  // Teardowns the pool, server, and in-memory Postgres instance
+  await pg.teardown()
 }
 ```
 
@@ -35,12 +35,12 @@ async function main() {
 import { withPostgres } from 'pglite-pool';
 
 async function main() {
-	const anythingString = await withPostgres(async (pg) => {
-		const pool = pg.pool
-		await pool.query('select 1')
-		return 'anything';
-		// Teardown happens automatically after return
-	})
+  const anythingString = await withPostgres(async (pg) => {
+    const pool = pg.pool
+    await pool.query('select 1')
+    return 'anything';
+    // Teardown happens automatically after return
+  })
 }
 ```
 
@@ -69,13 +69,42 @@ const makeConfig = (connectionString: string) => {
   },
 };
 
-async function run() {
-	await withPostgres(async (pg) => {
-		await processDatabase(makeConfig(pg.connectionString));
-	})
-}
+await withPostgres(async (pg) => {
+  await processDatabase(makeConfig(pg.connectionString));
+})
 
 run();
 ```
 
 And then `bun run codegen.ts` just works™.
+
+A full graphile-migrate + Kanel example might be:
+```typescript
+import { processDatabase } from "kanel";
+import { makeKyselyHook } from "kanel-kysely";
+import { withPostgres } from 'pglite-pool'
+import { watch } from "graphile-migrate";
+
+const makeConfig = (connectionString: string) => {
+  schemas: ["my_schema"],
+  outputPath: "./src/database",
+  preRenderHooks: [makeKyselyHook()],
+  connection: {
+    connectionString,
+  },
+};
+
+await withPostgres(async (pg) => {
+  await watch(
+    {
+      connectionString: pg.connectionString,
+      migrationsFolder: "./migrations", // or other path to migrations folder
+    },
+    true
+  );
+
+  await processDatabase(makeConfig(pg.connectionString));
+})
+
+run();
+```
