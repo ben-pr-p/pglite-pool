@@ -1,0 +1,37 @@
+{
+  "name": "pglite-pool",
+  "version": "0.0.1",
+  "main": "dist/index.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "compile": "bun build index.ts --target node --outdir=dist && tsc",
+    "test": "bun test index.test.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0",
+    "@types/pg": "^8.11.6",
+    "pg": "^8.12.0"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "^0.1.5",
+    "pglite-server": "^0.1.2"
+  },
+  "author": {
+    "name": "Ben Packer",
+    "email": "ben.paul.ryan.packer@gmail.com",
+    "url": "https://bprp.xyz"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ben-pr-p/pglite-pool/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:ben-pr-p/pglite-pool.git"
+  }
+}
