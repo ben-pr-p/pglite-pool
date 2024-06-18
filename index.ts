@@ -1,37 +1,73 @@
-import { createServer } from "pglite-server";
+import { createServer, LogLevel } from "pglite-server";
 import { PGlite } from "@electric-sql/pglite";
 import { Pool } from "pg";
-
-const STARTING_PORT = 6432;
+import type { Server } from "node:net";
 
 type PgLitePoolOptions = {
   port?: number;
+  logLevel?: LogLevel;
 };
-
-let nextPort = STARTING_PORT;
 
 type Pg = {
   pool: Pool;
   connectionString: string;
+  port: number;
   teardown: () => Promise<void>;
+};
+
+/**
+ * Starts the server, incrementing the port each time if the port is already taken
+ * Tries @param tries times
+ * Returns the port that was successfully started
+ * @param lite
+ * @param port
+ * @param tries
+ */
+const startServerAfterTries = (
+  server: Server,
+  tries: number = 5
+): Promise<number> => {
+  return new Promise((resolve, reject) => {
+    const tryStart = (tries: number) => {
+      if (tries === 0) {
+        reject(new Error("Could not start server"));
+        return;
+      }
+
+      server.on("error", (error: any) => {
+        console.log("Error handling going");
+        if (error.code === "EADDRINUSE") {
+          tryStart(tries - 1);
+        }
+      });
+
+      server.listen(0, () => {
+        const address = server.address();
+
+        if (!address || typeof address === "string") {
+          throw new Error("Could not start server");
+        }
+
+        resolve(address.port);
+      });
+    };
+
+    tryStart(tries);
+  });
 };
 
 export async function getPostgres(
   options: PgLitePoolOptions = {}
 ): Promise<Pg> {
-  const port = options?.port ?? nextPort++;
-
   const lite = new PGlite();
   await lite.waitReady;
 
-  const pgServer = createServer(lite);
+  const pgServer = createServer(lite, {
+    logLevel: options.logLevel || LogLevel.Error,
+  });
 
   // Await listening
-  await new Promise<void>((resolve, _reject) => {
-    pgServer.listen(port, () => {
-      resolve();
-    });
-  });
+  const port = await startServerAfterTries(pgServer);
 
   const connectionString = `postgresql://postgres:postgres@localhost:${port}/postgres`;
 
@@ -52,6 +88,7 @@ export async function getPostgres(
 
   return {
     pool,
+    port,
     connectionString,
     teardown,
   };
