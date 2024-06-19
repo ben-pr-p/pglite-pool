@@ -4,6 +4,8 @@ Simplifies using [`pglite`](https://github.com/electric-sql/pglite) in Node/Bun 
 codegen and tests by using [`pglite-server`](https://www.npmjs.com/package/pglite-server)
 to create a Postgres server at a random port.
 
+Each instance created by `getPostgres` / `withPostgres` is fully ephemeral and isolated.
+
 ## Usage
 
 Both a teardown style and a callback style are supported.
